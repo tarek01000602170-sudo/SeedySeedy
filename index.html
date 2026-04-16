@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجر النباتات الاحترافي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f0ebf8;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            border-top: 10px solid #673ab7;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+            padding: 24px;
+        }
+
+        .admin-card {
+            border-top-color: #f59e0b;
+        }
+
+        .product-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            border-color: #673ab7;
+            box-shadow: 0 10px 20px rgba(103, 58, 183, 0.1);
+        }
+
+        .img-container {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            padding: 10px;
+        }
+
+        .img-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modal-bg {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+
+<body class="p-2 md:p-6">
+
+    <!-- نافبار -->
+    <nav class="max-w-6xl mx-auto mb-6 flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm">
+        <h1 class="text-xl font-bold text-purple-700">🌱 متجر النباتات</h1>
+        <div class="flex gap-2">
+            <button onclick="showPage('user')" class="px-4 py-2 font-bold text-gray-600">المتجر</button>
+            <button onclick="openLogin()"
+                class="bg-orange-500 text-white px-5 py-2 rounded-xl font-bold shadow-md hover:bg-orange-600">لوحة
+                التحكم</button>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto">
+
+        <!-- ================= صفحة المتجر ================= -->
+        <div id="user-view">
+            <div id="categories-container" class="space-y-8"></div>
+
+            <!-- سلة المشتريات -->
+            <div class="form-card mt-10 border-t-green-500">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 text-green-700 font-bold">🛒 سلة المشتريات</h2>
+                <div id="cart-items-list" class="overflow-x-auto min-h-[50px]"></div>
+            </div>
+
+            <!-- بيانات الشحن -->
+            <div class="form-card">
+                <h2 class="text-xl font-bold mb-6 border-b pb-2">بيانات الشحن والاستلام</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="c-name" placeholder="الاسم بالكامل"
+                        class="p-3 border rounded-xl outline-none focus:border-purple-600">
+                    <input type="tel" id="c-phone" placeholder="رقم الموبايل"
+                        class="p-3 border rounded-xl outline-none focus:border-purple-600">
+                    <input type="text" id="c-address" placeholder="العنوان بالتفصيل"
+                        class="p-3 border rounded-xl outline-none focus:border-purple-600 md:col-span-2">
+                    <select id="c-ship"
+                        class="p-3 border rounded-xl outline-none focus:border-purple-600 md:col-span-2">
+                        <option value="0">اختر منطقة الشحن</option>
+                        <option value="50">توصيل منزلي (50 ج.م)</option>
+                        <option value="100">شحن محافظات (100 ج.م)</option>
+                    </select>
+                </div>
+                <button onclick="sendOrder()"
+                    class="w-full mt-8 bg-green-600 text-white py-4 rounded-2xl font-bold text-xl shadow-lg hover:bg-green-700 transition">إرسال
+                    الفاتورة عبر واتساب ✅</button>
+            </div>
+        </div>
+
+        <!-- ================= صفحة لوحة التحكم ================= -->
+        <div id="admin-page" class="hidden">
+            <div class="form-card admin-card">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-orange-600">لوحة المسؤول</h2>
+                    <div class="flex gap-2 bg-gray-100 p-2 rounded-xl">
+                        <input type="text" id="admin-whatsapp" class="p-2 border rounded-lg text-sm w-32"
+                            placeholder="رقم الواتساب">
+                        <button onclick="saveWA()"
+                            class="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs">حفظ</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-6 rounded-2xl border mb-6">
+                    <input type="text" id="p-name" placeholder="اسم المنتج" class="p-3 border rounded-xl">
+                    <input type="number" id="p-price" placeholder="السعر" class="p-3 border rounded-xl">
+                    <select id="p-cat" class="p-3 border rounded-xl">
+                        <option value="الأبصال">الأبصال</option>
+                        <option value="الزهور">الزهور</option>
+                        <option value="الخضروات">الخضروات</option>
+                        <option value="التربة">التربة</option>
+                    </select>
+                    <input type="text" id="p-imgs" placeholder="روابط الصور (رابط1, رابط2...)"
+                        class="p-3 border rounded-xl">
+                    <textarea id="p-details" placeholder="وصف المنتج"
+                        class="p-3 border rounded-xl md:col-span-2"></textarea>
+                    <button onclick="addNewProduct()"
+                        class="md:col-span-2 bg-purple-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-purple-700 transition">إضافة
+                        المنتج للقائمة ✨</button>
+                </div>
+
+                <div class="flex gap-4 mb-4">
+                    <button onclick="exportToExcel()" class="bg-gray-700 text-white px-6 py-2 rounded-xl text-sm">تصدير
+                        إكسل 📥</button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right bg-white rounded-xl shadow-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-4 border-b">المنتج</th>
+                                <th class="p-4 border-b">السعر</th>
+                                <th class="p-4 border-b">إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال التفاصيل -->
+    <div id="product-modal" class="hidden fixed inset-0 z-[110] modal-bg flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl overflow-y-auto relative p-6 md:p-10">
+            <button onclick="closeModal()" class="absolute top-5 left-5 text-4xl text-gray-400">&times;</button>
+            <div id="modal-content" class="grid grid-cols-1 md:grid-cols-2 gap-10"></div>
+            <div class="mt-10 border-t pt-8">
+                <h3 class="font-bold text-xl mb-4 text-purple-800">منتجات مشابهة</h3>
+                <div id="related-products" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة الدخول -->
+    <div id="login-screen"
+        class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-6 text-center text-purple-800">دخول المسؤول</h2>
+            <input type="text" id="admin-user" placeholder="اسم المستخدم"
+                class="w-full p-3 border rounded-xl mb-3 outline-none focus:ring-2 focus:ring-purple-500">
+            <input type="password" id="admin-pass" placeholder="كلمة المرور"
+                class="w-full p-3 border rounded-xl mb-6 outline-none focus:ring-2 focus:ring-purple-500">
+            <button onclick="checkLogin()"
+                class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold shadow-lg">دخول</button>
+            <button onclick="closeLogin()" class="w-full text-gray-500 mt-4 text-sm">إلغاء</button>
+        </div>
+    </div>
+
+    <!-- ================= الـ JavaScript ================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyChUXphmduWh9fCw0krYx_m7xxQX8nzSv0",
+            authDomain: "seedyseedy.firebaseapp.com",
+            projectId: "seedyseedy",
+            storageBucket: "seedyseedy.firebasestorage.app",
+            messagingSenderId: "1034684215735",
+            appId: "1:1034684215735:web:0f29e77e15880497eef832",
+            measurementId: "G-H6WJTKH2VF"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // متغيرات عالمية
+        window.db = db;
+        window.doc = doc;
+        window.deleteDoc = deleteDoc;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.setDoc = setDoc;
+        window.products = [];
+        window.waNumber = "201234567890";
+        window.catsOrder = ["الأبصال", "الزهور", "الخضروات", "التربة"];
+        window.cart = JSON.parse(localStorage.getItem('agri_cart')) || [];
+
+        // جلب البيانات
+        onSnapshot(collection(db, "products"), (snapshot) => {
+            window.products = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderProducts();
+            renderAdminTable();
+        });
+
+        onSnapshot(doc(db, "settings", "whatsapp"), (docSnap) => {
+            if (docSnap.exists()) {
+                window.waNumber = docSnap.data().number;
+                if (document.getElementById('admin-whatsapp')) document.getElementById('admin-whatsapp').value = window.waNumber;
+            }
+        });
+
+        // إضافة منتج
+        window.addNewProduct = async () => {
+            const name = document.getElementById('p-name').value;
+            const price = document.getElementById('p-price').value;
+            const category = document.getElementById('p-cat').value;
+            const imgs = document.getElementById('p-imgs').value;
+            const details = document.getElementById('p-details').value;
+
+            if (!name || !price) return alert("يرجى إدخال البيانات");
+            try {
+                await window.addDoc(window.collection(window.db, "products"), { name, price: parseFloat(price), category, imgs, details, createdAt: Date.now() });
+                alert("تم الحفظ بنجاح ✅");
+                document.getElementById('p-name').value = '';
+                document.getElementById('p-price').value = '';
+                document.getElementById('p-imgs').value = '';
+                document.getElementById('p-details').value = '';
+            } catch (e) { alert("خطأ: " + e); }
+        };
+
+        window.deleteProduct = async (id) => {
+            if (confirm("حذف نهائي؟")) await window.deleteDoc(window.doc(window.db, "products", id));
+        };
+
+        window.saveWA = async () => {
+            const num = document.getElementById('admin-whatsapp').value;
+            await window.setDoc(window.doc(window.db, "settings", "whatsapp"), { number: num });
+            alert("تم تحديث رقم الواتساب");
+        };
+    </script>
+
+    <script>
+        // دالة عرض المنتجات (مع إضافة السلة من الخارج)
+        function renderProducts() {
+            const container = document.getElementById('categories-container');
+            if (!container || !window.products) return;
+            container.innerHTML = '';
+
+            window.catsOrder.forEach(cat => {
+                const filtered = window.products.filter(p => p.category === cat);
+                if (filtered.length > 0) {
+                    let html = `
+                    <div class="form-card">
+                        <h2 class="text-xl font-bold mb-6 text-purple-800 border-b-2 border-purple-50 pb-2">${cat}</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">`;
+
+                    filtered.forEach(p => {
+                        const img = p.imgs ? p.imgs.split(',')[0] : 'https://via.placeholder.com/150';
+                        html += `
+                        <div class="product-card">
+                            <div onclick="openProductDetails('${p.id}')" class="cursor-pointer">
+                                <div class="img-container"><img src="${img}"></div>
+                                <div class="p-4 text-center">
+                                    <h3 class="font-bold text-gray-800 text-sm mb-1 h-10 overflow-hidden">${p.name}</h3>
+                                    <p class="text-green-600 font-bold mb-1">${p.price} ج.م</p>
+                                    <p class="text-gray-400 text-[10px] mb-2">👁️ عرض التفاصيل</p>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-gray-50 border-t space-y-2 mt-auto">
+                                <select id="qty-out-${p.id}" class="w-full p-2 border rounded-lg text-xs font-bold outline-none">
+                                    <option value="0">الكمية: 0</option>
+                                    ${[1, 2, 3, 4, 5, 10, 20, 50].map(n => `<option value="${n}">${n}</option>`).join('')}
+                                </select>
+                                <button onclick="addToCart('${p.id}', 'qty-out-${p.id}')" class="w-full bg-purple-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-purple-700 transition">إضافة للسلة 🛒</button>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div></div>`;
+                    container.innerHTML += html;
+                }
+            });
+        }
+
+        function addToCart(id, inputId) {
+            const qtyInput = document.getElementById(inputId);
+            const qty = parseInt(qtyInput.value);
+            if (!qty || qty <= 0) return alert("يرجى اختيار الكمية أولاً");
+
+            const product = window.products.find(p => p.id === id);
+            const index = window.cart.findIndex(i => i.id === id);
+
+            if (index > -1) window.cart[index].qty += qty;
+            else window.cart.push({ id: product.id, name: product.name, price: product.price, qty: qty });
+
+            localStorage.setItem('agri_cart', JSON.stringify(window.cart));
+            renderCartUI();
+            qtyInput.value = "0";
+            if (inputId.includes('modal')) closeModal();
+            alert(`✅ تم إضافة ${qty} من ${product.name}`);
+        }
+
+        function renderCartUI() {
+            const list = document.getElementById('cart-items-list');
+            if (!list) return;
+            if (window.cart.length === 0) { list.innerHTML = '<p class="text-gray-400 text-center py-4 text-sm">السلة فارغة</p>'; return; }
+
+            let total = 0;
+            let html = '<table class="w-full text-right text-xs border-collapse"><thead><tr class="bg-gray-50"><th class="p-2 border">المنتج</th><th class="p-2 border">الكمية</th><th class="p-2 border">السعر</th><th class="p-2 border">حذف</th></tr></thead><tbody>';
+            window.cart.forEach((item, index) => {
+                total += (item.qty * item.price);
+                html += `<tr><td class="p-2 border">${item.name}</td><td class="p-2 border">${item.qty}</td><td class="p-2 border">${item.qty * item.price} ج.م</td><td class="p-2 border text-center"><button onclick="removeFromCart(${index})" class="text-red-500 font-bold text-lg">×</button></td></tr>`;
+            });
+            html += `</tbody></table><div class="mt-4 font-bold text-purple-700">إجمالي الطلب: ${total} ج.م</div>`;
+            list.innerHTML = html;
+        }
+
+        function removeFromCart(index) { window.cart.splice(index, 1); localStorage.setItem('agri_cart', JSON.stringify(window.cart)); renderCartUI(); }
+
+        function openProductDetails(id) {
+            const p = window.products.find(x => x.id === id);
+            const modal = document.getElementById('product-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+
+            const imgs = p.imgs ? p.imgs.split(',') : ['https://via.placeholder.com/150'];
+            content.innerHTML = `
+                <div>
+                    <div class="img-container h-80 bg-gray-50 border rounded-2xl mb-4"><img id="m-img" src="${imgs[0]}"></div>
+                    <div class="flex gap-2 overflow-x-auto pb-2">${imgs.map(i => `<img src="${i}" class="w-20 h-20 object-cover border rounded-xl cursor-pointer" onclick="document.getElementById('m-img').src='${i}'">`).join('')}</div>
+                </div>
+                <div class="flex flex-col justify-center">
+                    <h2 class="text-2xl font-bold mb-2">${p.name}</h2>
+                    <p class="text-orange-600 font-bold text-xl mb-6">${p.price} ج.م</p>
+                    <p class="text-gray-600 text-sm mb-8">${p.details || 'لا يوجد وصف.'}</p>
+                    <div class="bg-purple-50 p-6 rounded-2xl">
+                        <select id="qty-modal-${p.id}" class="w-full p-3 border rounded-xl outline-none mb-4">
+                            <option value="0">اختر الكمية</option>
+                            ${[1, 2, 3, 4, 5, 10, 20, 50].map(n => `<option value="${n}">${n}</option>`).join('')}
+                        </select>
+                        <button onclick="addToCart('${p.id}', 'qty-modal-${p.id}')" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold">إضافة للسلة 🛒</button>
+                    </div>
+                </div>`;
+
+            const related = window.products.filter(x => x.category === p.category && x.id !== p.id).slice(0, 4);
+            document.getElementById('related-products').innerHTML = related.map(r => `<div class="border rounded-xl p-2 text-center cursor-pointer" onclick="openProductDetails('${r.id}')"><img src="${r.imgs ? r.imgs.split(',')[0] : ''}" class="w-full h-20 object-contain mb-1"><p class="text-[10px] font-bold truncate">${r.name}</p></div>`).join('');
+        }
+
+        function closeModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+        function sendOrder() {
+            const name = document.getElementById('c-name').value;
+            const phone = document.getElementById('c-phone').value;
+            const addr = document.getElementById('c-address').value;
+            const ship = parseFloat(document.getElementById('c-ship').value);
+
+            if (!name || !phone || window.cart.length === 0) return alert("أكمل البيانات واختر منتجات أولاً");
+
+            let itemsMsg = ""; let total = 0;
+            window.cart.forEach(item => { itemsMsg += `▫️ ${item.name} | ${item.qty} × ${item.price} = ${item.qty * item.price} ج.م\n`; total += (item.qty * item.price); });
+
+            const text = `*طلب شراء جديد*\nالعميل: ${name}\nالهاتف: ${phone}\nالعنوان: ${addr}\n---\n${itemsMsg}---\nالمجموع: ${total} ج.م\nالشحن: ${ship} ج.م\n*الإجمالي: ${total + ship} ج.م*`;
+            window.open(`https://wa.me/${window.waNumber}?text=${encodeURIComponent(text)}`);
+            window.cart = []; localStorage.removeItem('agri_cart'); renderCartUI();
+        }
+
+        function renderAdminTable() {
+            const body = document.getElementById('admin-table-body');
+            if (!body) return;
+            body.innerHTML = window.products.map(p => `<tr class="border-b"><td class="p-4 text-xs font-bold">${p.name}</td><td class="p-4 text-xs">${p.price} ج.م</td><td class="p-4"><button onclick="deleteProduct('${p.id}')" class="text-red-500 font-bold">حذف</button></td></tr>`).join('');
+        }
+
+        function showPage(p) { document.getElementById('user-view').classList.toggle('hidden', p !== 'user'); document.getElementById('admin-page').classList.toggle('hidden', p !== 'admin'); }
+        function openLogin() { document.getElementById('login-screen').classList.remove('hidden'); }
+        function closeLogin() { document.getElementById('login-screen').classList.add('hidden'); }
+        function checkLogin() { if (document.getElementById('admin-user').value === 'admin' && document.getElementById('admin-pass').value === '123') { showPage('admin'); closeLogin(); } else alert("خطأ"); }
+        function exportToExcel() { const ws = XLSX.utils.json_to_sheet(window.products); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Products"); XLSX.writeFile(wb, "Backup.xlsx"); }
+
+        window.onload = () => { renderCartUI(); };
+    </script>
+</body>
+
+</html>
